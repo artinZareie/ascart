@@ -11,11 +11,13 @@ const int MAX_CHARS = 92;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3)
+    if (argc != 4)
     {
         perror("insufficient/too many arguments.");
         return 1;
     }
+
+    const int target_width = atoi(argv[3]);
 
     FILE *image_file = fopen(argv[1], "r");
 
@@ -53,6 +55,24 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // TODO: relax this constraint in future.
+    if (image_width % target_width != 0)
+    {
+        perror("Incorrect dimension");
+        fclose(target_file);
+        fclose(image_file);
+        return 1;
+    }
+
+    const int target_height = (image_height * target_width) / image_width;
+
+    const int patch_width = image_width / target_width;
+    const int patch_height = image_height / target_height;
+    const int patch_size = patch_height * patch_width;
+
+    int *real_image_grid = (int *)malloc(image_width * image_height * sizeof(int));
+    int *scaled_image_grid = (int *)malloc(target_width * target_height * sizeof(int));
+
     int image_darkest = 255;
 
     if (fscanf(image_file, "%d", &image_darkest) != 1 || image_darkest <= 0)
@@ -63,7 +83,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int this_line_characters = 0;
+    int col = 0;
+    int row = 0;
 
     getc(image_file); // Ignore the newline character.
     char line[MAX_BUFF];
@@ -91,19 +112,52 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            int ascii_index = (pixel * (MAX_CHARS - 1)) / image_darkest;
-            fputc(ASCII_CHARACTER[ascii_index], target_file);
-            this_line_characters++;
+            real_image_grid[row * image_width + col] = pixel;
+            col++;
             ptr = tptr;
 
-            if (this_line_characters == image_width)
+            if (col == image_width)
             {
-                fputc('\n', target_file);
-                this_line_characters = 0;
+                col = 0;
+                row++;
             }
         }
     }
 
+    for (int i = 0; i < target_height; i++)
+    {
+        for (int j = 0; j < target_width; j++)
+        {
+            int sum = 0;
+
+            for (int ii = 0; ii < patch_height; ii++)
+            {
+                for (int jj = 0; jj < patch_width; jj++)
+                {
+                    // sum += real_image_grid[i * patch_height + ii][j * patch_width + j]
+                    sum += real_image_grid[(i * patch_height + ii) * image_width + j * patch_width + jj];
+                }
+            }
+
+            sum /= patch_size;
+            scaled_image_grid[i * target_width + j] = sum;
+        }
+    }
+
+    for (int i = 0; i < target_height; i++)
+    {
+        for (int j = 0; j < target_width; j++)
+        {
+            int pixel = scaled_image_grid[i * target_width + j];
+            int idx = (pixel * (MAX_CHARS - 1)) / image_darkest;
+            fputc(ASCII_CHARACTER[idx], target_file);
+        }
+
+        fputc('\n', target_file);
+    }
+
+    free(scaled_image_grid);
+    free(real_image_grid);
     fclose(target_file);
     fclose(image_file);
 
