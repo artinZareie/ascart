@@ -21,7 +21,7 @@ _start:
 	printstr welcome_msg, welcome_msg_len
 
 	; rsp + 0: argc
-	; rsp + 8i: argv[i]
+	; rsp + 8 + 8i: argv[i]
 
 	; argc = [rsp]
 	mov rax, [rsp]
@@ -35,6 +35,9 @@ _start:
 	mov rax, [rsp + 24]
 	mov [output_path], rax
 
-	printstr [input_path], 100
+	strlenm [output_path]
+
+	printstr [input_path], rax
 
 	exit 0
+
