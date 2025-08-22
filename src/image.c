@@ -12,7 +12,7 @@ GrayScaleImage *create_grayscale_image(size_t width, size_t height, size_t max_p
     img->height = height;
     img->width = width;
     img->max_pixel_value = max_pixel_value;
-    img->pixels = (size_t *)malloc(width * height * sizeof(int32_t));
+    img->pixels = (size_t *)malloc(width * height * sizeof(size_t));
     if (!img->pixels)
     {
         free(img);

@@ -51,7 +51,7 @@ GrayScaleImage *read_pgm_p2(const char *filename)
                 errorf("Dimension Mismatch!");
             }
 
-			elogf("%d %d | %zu %zu", i, j, width, height);
+            elogf("%d %d | %zu %zu", i, j, width, height);
 
             IMG_INDEX(image->pixels, width, i, j) = pixel_value;
         }
