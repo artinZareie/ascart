@@ -55,15 +55,6 @@ int main(int argc, char *argv[])
 
     const int target_width = argc == 4 ? atoi(argv[3]) : image_width;
 
-    // // TODO: relax this constraint in future.
-    // if (image_width % target_width != 0)
-    // {
-    //     perror("Incorrect dimension");
-    //     fclose(target_file);
-    //     fclose(image_file);
-    //     return 1;
-    // }
-
     const int target_height = (image_height * target_width) / image_width / 2;
 
     const int patch_width = image_width / target_width;
