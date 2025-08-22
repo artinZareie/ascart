@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <helpers.h>
+
 #define MAX_BUFF 1024
 
 const char *const ASCII_CHARACTER =
