@@ -1,158 +1,72 @@
-#include <ctype.h>
+#include <ascii_engine.h>
+#include <helpers.h>
+#include <image.h>
+#include <pgm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-#include <helpers.h>
-
-#define MAX_BUFF 1024
-
-const char *const ASCII_CHARACTER =
-    " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
-const int MAX_CHARS = 92;
 
 int main(int argc, char *argv[])
 {
     if (argc != 4 && argc != 3)
     {
-        perror("insufficient/too many arguments.");
+        errorf("Usage: %s <input.pgm> <output.txt> [target_width]", argv[0]);
         return 1;
     }
 
-    FILE *image_file = fopen(argv[1], "r");
-
-    if (image_file == NULL)
+    GrayScaleImage *original_image = read_pgm_p2(argv[1]);
+    if (!original_image)
     {
-        perror("fopen() failed");
+        errorf("Failed to read PGM file: %s", argv[1]);
         return 1;
     }
 
-    FILE *target_file = fopen(argv[2], "w");
+    debugf("Original image: %zux%zu, max value: %zu", original_image->width, original_image->height,
+           original_image->max_pixel_value);
 
-    if (target_file == NULL)
+    const size_t target_width = (argc == 4) ? (size_t)atoi(argv[3]) : original_image->width;
+
+    if (target_width >= original_image->width)
     {
-        perror("fopen() failed");
-        fclose(image_file);
+        errorf("Target width (%zu) must be less than original width (%zu)", target_width, original_image->width);
+        destroy_grayscale_image(original_image);
         return 1;
     }
 
-    int image_width, image_height;
-    char image_type[20];
-    fgets(image_type, 19, image_file);
-    if (strcmp("P2\n", image_type) != 0)
+    GrayScaleImage *scaled_image = scale_grayscale_image_average(original_image, target_width);
+    if (!scaled_image)
     {
-        perror("format error: P2 format required");
-        fclose(target_file);
-        fclose(image_file);
+        errorf("Failed to scale image");
+        destroy_grayscale_image(original_image);
         return 1;
     }
 
-    if (fscanf(image_file, "%d %d", &image_width, &image_height) != 2)
+    debugf("Scaled image: %zux%zu", scaled_image->width, scaled_image->height);
+
+    CharacterASCIIImage *ascii_art = generate_brightness_ascii_art(scaled_image);
+    if (!ascii_art)
     {
-        perror("corrupted input");
-        fclose(target_file);
-        fclose(image_file);
+        errorf("Failed to generate ASCII art");
+        destroy_grayscale_image(original_image);
+        destroy_grayscale_image(scaled_image);
         return 1;
     }
 
-    const int target_width = argc == 4 ? atoi(argv[3]) : image_width;
-
-    const int target_height = (image_height * target_width) / image_width / 2;
-
-    const int patch_width = image_width / target_width;
-    const int patch_height = image_height / target_height;
-    const int patch_size = patch_height * patch_width;
-
-    int *real_image_grid = (int *)malloc(image_width * image_height * sizeof(int));
-    int *scaled_image_grid = (int *)malloc(target_width * target_height * sizeof(int));
-
-    int image_darkest = 255;
-
-    if (fscanf(image_file, "%d", &image_darkest) != 1 || image_darkest <= 0)
+    FileSaveStat save_status = save_character_ascii_image_to_file(ascii_art, argv[2]);
+    if (save_status != SAVE_SUCCESS)
     {
-        perror("corrupted input");
-        fclose(target_file);
-        fclose(image_file);
+        errorf("Failed to save ASCII art to: %s", argv[2]);
+        destroy_grayscale_image(original_image);
+        destroy_grayscale_image(scaled_image);
+        destroy_character_ascii_image(ascii_art);
         return 1;
     }
 
-    int col = 0;
-    int row = 0;
+    elogf("Successfully converted %s to ASCII art in %s", argv[1], argv[2]);
+    debugf("Output size: %zux%zu characters", ascii_art->width, ascii_art->height);
 
-    getc(image_file); // Ignore the newline character.
-    char line[MAX_BUFF];
-    while (fgets(line, MAX_BUFF, image_file)) // Read line by line.
-    {
-        char *ptr = line, *tptr;
-
-        while (*ptr != '\0')
-        {
-            if (*ptr == '\n')
-            {
-                break;
-            }
-
-            while (isspace((unsigned char)*ptr))
-            {
-                ptr++;
-            }
-
-            int pixel = strtol(ptr, &tptr, 10);
-
-            if (ptr == tptr)
-            {
-                ptr++;
-                continue;
-            }
-
-            real_image_grid[row * image_width + col] = pixel;
-            col++;
-            ptr = tptr;
-
-            if (col == image_width)
-            {
-                col = 0;
-                row++;
-            }
-        }
-    }
-
-    for (int i = 0; i < target_height; i++)
-    {
-        for (int j = 0; j < target_width; j++)
-        {
-            int sum = 0;
-
-            for (int ii = 0; ii < patch_height; ii++)
-            {
-                for (int jj = 0; jj < patch_width; jj++)
-                {
-                    // sum += real_image_grid[i * patch_height + ii][j * patch_width + j]
-                    sum += real_image_grid[(i * patch_height + ii) * image_width + j * patch_width + jj];
-                }
-            }
-
-            sum /= patch_size;
-            scaled_image_grid[i * target_width + j] = sum;
-        }
-    }
-
-    for (int i = 0; i < target_height; i++)
-    {
-        for (int j = 0; j < target_width; j++)
-        {
-            int pixel = scaled_image_grid[i * target_width + j];
-            int idx = (pixel * (MAX_CHARS - 1)) / image_darkest;
-            fputc(ASCII_CHARACTER[idx], target_file);
-        }
-
-        fputc('\n', target_file);
-    }
-
-    free(scaled_image_grid);
-    free(real_image_grid);
-    fclose(target_file);
-    fclose(image_file);
+    destroy_grayscale_image(original_image);
+    destroy_grayscale_image(scaled_image);
+    destroy_character_ascii_image(ascii_art);
 
     return 0;
 }

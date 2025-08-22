@@ -16,7 +16,7 @@ GrayScaleImage *read_pgm_p2(const char *filename)
     char buff[AGP_PGM_BUFF_SIZE];
     fscanf(file, "%s", buff);
 
-    if (strcmp(buff, "P2\n") != 0)
+    if (strcmp(buff, "P2") != 0)
     {
         fclose(file);
         errorf("Target File Invalid Format!");
@@ -50,6 +50,8 @@ GrayScaleImage *read_pgm_p2(const char *filename)
             {
                 errorf("Dimension Mismatch!");
             }
+
+			elogf("%d %d | %zu %zu", i, j, width, height);
 
             IMG_INDEX(image->pixels, width, i, j) = pixel_value;
         }

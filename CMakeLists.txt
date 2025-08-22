@@ -8,6 +8,10 @@ set(AGP_ERROR_LEVEL 2 CACHE STRING "Error logging level (0-2)")
 
 if(AGP_DEBUG)
     add_compile_definitions(AGP_DEBUG)
+	option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+	option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+	option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+	option(ENABLE_DEBUG "Enable debug symbols" OFF)
 endif()
 add_compile_definitions(AGP_ERROR_LEVEL=${AGP_ERROR_LEVEL})
 

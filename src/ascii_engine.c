@@ -59,7 +59,7 @@ CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage *restric
     return ascart;
 }
 
-FileSaveStat save_character_ascii_image_to_file(const GrayScaleImage *restrict src, const char *dest)
+FileSaveStat save_character_ascii_image_to_file(const CharacterASCIIImage *restrict src, const char *dest)
 {
     FILE *file = fopen(dest, "w");
 
