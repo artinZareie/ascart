@@ -1,5 +1,6 @@
 #include <helpers.h>
 #include <pgm.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -22,15 +23,15 @@ GrayScaleImage *read_pgm_p2(const char *filename)
         return 0;
     }
 
-    int width, height, max_pixel_value;
-    if (fscanf(file, "%d %d", &width, &height) != 2)
+    size_t width, height, max_pixel_value;
+    if (fscanf(file, "%zu %zu", &width, &height) != 2)
     {
         fclose(file);
         errorf("Target PGM file corrupted.");
         return 0;
     }
 
-    if (fscanf(file, "%d", &max_pixel_value) != 1)
+    if (fscanf(file, "%zu", &max_pixel_value) != 1)
     {
         fclose(file);
         errorf("Target PGM file corrupted.");
@@ -43,9 +44,9 @@ GrayScaleImage *read_pgm_p2(const char *filename)
     {
         for (int j = 0; j < width; j++)
         {
-            int pixel_value;
+            size_t pixel_value;
 
-            if (fscanf(file, "%d", &pixel_value) != 1)
+            if (fscanf(file, "%zu", &pixel_value) != 1)
             {
                 errorf("Dimension Mismatch!");
             }

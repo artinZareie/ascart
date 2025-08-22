@@ -18,6 +18,7 @@ set(SOURCES
 	src/helpers.c
 	src/image.c
 	src/pgm.c
+	src/ascii_engine.c
 )
 
 include_directories(include/)

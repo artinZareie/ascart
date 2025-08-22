@@ -1,8 +1,9 @@
 #include <image.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-GrayScaleImage *create_grayscale_image(int width, int height, int max_pixel_value)
+GrayScaleImage *create_grayscale_image(size_t width, size_t height, size_t max_pixel_value)
 {
     GrayScaleImage *img = (GrayScaleImage *)malloc(sizeof(GrayScaleImage));
     if (!img)
@@ -11,7 +12,7 @@ GrayScaleImage *create_grayscale_image(int width, int height, int max_pixel_valu
     img->height = height;
     img->width = width;
     img->max_pixel_value = max_pixel_value;
-    img->pixels = (int *)malloc(width * height * sizeof(int32_t));
+    img->pixels = (size_t *)malloc(width * height * sizeof(int32_t));
     if (!img->pixels)
     {
         free(img);
@@ -26,13 +27,16 @@ void destroy_grayscale_image(GrayScaleImage *img)
     if (img)
     {
         img->width = img->height = img->max_pixel_value = 0;
-        free(img->pixels);
+
+        if (img->pixels)
+            free(img->pixels);
+
         img->pixels = NULL;
-		free(img);
+        free(img);
     }
 }
 
-GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src, const int target_width)
+GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src, const size_t target_width)
 {
     // Upscaling is not accepted.
     if (target_width >= src->width)
@@ -40,9 +44,9 @@ GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src
         return NULL;
     }
 
-    const int target_height = (src->height * target_width) / (src->width) / WIDTH_HEIGH_SCALE_FACTOR;
-    const int patch_width = src->width / target_width;
-    const int patch_height = src->height / target_height;
+    const size_t target_height = (src->height * target_width) / (src->width) / WIDTH_HEIGH_SCALE_FACTOR;
+    const size_t patch_width = src->width / target_width;
+    const size_t patch_height = src->height / target_height;
 
     GrayScaleImage *scaled = create_grayscale_image(target_width, target_height, src->max_pixel_value);
 
