@@ -1,4 +1,5 @@
 #include <ascii_engine.h>
+#include <helpers.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,10 +50,10 @@ CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage *restric
     {
         for (int j = 0; j < src->width; j++)
         {
-            int pixel = IMG_INDEX(src->pixels, src->width, i, j);
-            char ascii =
-                brightness_ascii_characters[(pixel * (brightness_ascii_characters_count - 1)) / src->max_pixel_value];
-            IMG_INDEX(src->pixels, src->width, i, j);
+            size_t pixel = IMG_INDEX(src->pixels, src->width, i, j);
+            char ascii = brightness_ascii_characters[((int)pixel * ((int)brightness_ascii_characters_count - 1)) /
+                                                     (int)src->max_pixel_value];
+            IMG_INDEX(ascart->pixels, ascart->width, i, j) = ascii;
         }
     }
 

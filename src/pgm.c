@@ -31,6 +31,8 @@ GrayScaleImage *read_pgm_p2(const char *filename)
         return 0;
     }
 
+    fgetc(file);
+
     if (fscanf(file, "%zu", &max_pixel_value) != 1)
     {
         fclose(file);
@@ -39,6 +41,7 @@ GrayScaleImage *read_pgm_p2(const char *filename)
     }
 
     GrayScaleImage *image = create_grayscale_image(width, height, max_pixel_value);
+	elogf("MAX: %zu", image->max_pixel_value);
 
     for (int i = 0; i < height; i++)
     {
@@ -50,8 +53,6 @@ GrayScaleImage *read_pgm_p2(const char *filename)
             {
                 errorf("Dimension Mismatch!");
             }
-
-            elogf("%d %d | %zu %zu", i, j, width, height);
 
             IMG_INDEX(image->pixels, width, i, j) = pixel_value;
         }
