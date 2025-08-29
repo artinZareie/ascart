@@ -47,7 +47,7 @@ GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit 
                                                        const size_t target_width)
 {
     // Upscaling is not accepted.
-    if (target_width >= src->width)
+    if (target_width > src->width)
     {
         return NULL;
     }
@@ -68,6 +68,7 @@ GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit 
 
             for (size_t ii = 0; ii < patch_height; ii++)
             {
+                UNROLL_LOOP
                 for (size_t jj = 0; jj < patch_width; jj++)
                 {
                     sum += IMG_INDEX(src->pixels, src->width, i * patch_height + ii, j * patch_width + jj);
@@ -88,7 +89,7 @@ GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2G
     int width, height, n_channels;
 
     unsigned char *img_data = stbi_load(filename, &width, &height, &n_channels, false);
-    if (img_data == NULL || width <= 0 || height <= 0 || n_channels <= 0)
+    if (img_data == NULL || width <= 0 || height <= 0 || n_channels <= 0 || n_channels > 4)
     {
         errorf("stbi_load() failed.");
         goto failure_exit;
@@ -101,8 +102,10 @@ GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2G
         goto failure_exit;
     }
 
+#pragma omp parallel for
     for (size_t i = 0; i < height; i++)
     {
+        UNROLL_LOOP
         for (size_t j = 0; j < width; j++)
         {
             size_t pixel_gray = 0;
@@ -126,11 +129,6 @@ GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2G
                 pixel_gray =
                     gray_alpha(rgb2gray(pixel_offset[0], pixel_offset[1], pixel_offset[2]), pixel_offset[3], 255);
                 break;
-
-            default:
-
-                errorf("stbi_image() failed.");
-                goto failure_exit;
             }
 
             IMG_INDEX(gscale_image->pixels, width, i, j) = pixel_gray;

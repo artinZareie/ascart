@@ -49,6 +49,7 @@ CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage8bit *res
 #pragma omp parallel for
     for (int i = 0; i < src->height; i++)
     {
+        UNROLL_LOOP
         for (int j = 0; j < src->width; j++)
         {
             size_t pixel = IMG_INDEX(src->pixels, src->width, i, j);
@@ -73,6 +74,7 @@ FileSaveStat save_character_ascii_image_to_file(const CharacterASCIIImage *restr
 
     for (int i = 0; i < src->height; i++)
     {
+        UNROLL_LOOP
         for (int j = 0; j < src->width; j++)
         {
             fputc(IMG_INDEX(src->pixels, src->width, i, j), file);

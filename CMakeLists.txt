@@ -16,6 +16,13 @@ if(AGP_DEBUG)
 endif()
 add_compile_definitions(AGP_ERROR_LEVEL=${AGP_ERROR_LEVEL})
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the build type" FORCE)
+endif()
+
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native")
+
 project(ascart)
 
 set(SOURCES 
