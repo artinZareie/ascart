@@ -139,10 +139,10 @@ GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2G
     return gscale_image;
 
 failure_exit:
-    if (!img_data)
+    if (img_data)
         stbi_image_free(img_data);
 
-    if (!gscale_image)
+    if (gscale_image)
         destroy_grayscale_image_8_bit(gscale_image);
 
     return NULL;
