@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    GrayScaleImage *original_image = read_pgm_p2(argv[1]);
+    GrayScaleImage *original_image = load_image_as_grayscale_stb(argv[1], rgb2gray_average, apply_gray_alpha);
     if (!original_image)
     {
         errorf("Failed to read PGM file: %s", argv[1]);

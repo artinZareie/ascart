@@ -1,7 +1,14 @@
+#include <helpers.h>
 #include <image.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 GrayScaleImage *create_grayscale_image(size_t width, size_t height, size_t max_pixel_value)
 {
@@ -50,15 +57,15 @@ GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src
 
     GrayScaleImage *scaled = create_grayscale_image(target_width, target_height, src->max_pixel_value);
 
-    for (int i = 0; i < target_height; i++)
+    for (size_t i = 0; i < target_height; i++)
     {
-        for (int j = 0; j < target_width; j++)
+        for (size_t j = 0; j < target_width; j++)
         {
             IMG_INDEX(scaled->pixels, target_width, i, j) = 0;
 
-            for (int ii = 0; ii < patch_height; ii++)
+            for (size_t ii = 0; ii < patch_height; ii++)
             {
-                for (int jj = 0; jj < patch_width; jj++)
+                for (size_t jj = 0; jj < patch_width; jj++)
                 {
                     IMG_INDEX(scaled->pixels, target_width, i, j) +=
                         IMG_INDEX(src->pixels, src->width, i * patch_height + ii, j * patch_width + jj);
@@ -70,4 +77,88 @@ GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src
     }
 
     return scaled;
+}
+
+GrayScaleImage *load_image_as_grayscale_stb(const char *filename, RGB2GrayFunc rgb2gray, GrayAlphaFunc gray_alpha)
+{
+    int width, height, n_channels;
+
+    unsigned char *img_data = stbi_load(filename, &width, &height, &n_channels, false);
+    if (img_data == NULL)
+    {
+        errorf("stbi_load() failed.");
+        return NULL;
+    }
+
+    if (width <= 0 || height <= 0 || n_channels <= 0)
+    {
+        stbi_image_free(img_data);
+        errorf("stbi_load() failed.");
+        return NULL;
+    }
+
+    GrayScaleImage *gscale_image = create_grayscale_image(width, height, 255);
+    if (!gscale_image)
+    {
+        stbi_image_free(img_data);
+        errorf("create_grayscale_image() failed.");
+        return NULL;
+    }
+
+    for (size_t i = 0; i < height; i++)
+    {
+        for (size_t j = 0; j < width; j++)
+        {
+            size_t pixel_gray = 0;
+            unsigned char *pixel_offset = img_data + (i * width + j) * n_channels;
+
+            switch (n_channels)
+            {
+            case 1: // Grayscale case
+                pixel_gray = pixel_offset[0];
+                break;
+
+            case 2: // Grayscale + Alpha Channel
+                pixel_gray = gray_alpha(pixel_offset[0], pixel_offset[1], 255);
+                break;
+
+            case 3: // RGB
+                pixel_gray = rgb2gray(pixel_offset[0], pixel_offset[1], pixel_offset[2]);
+                break;
+
+            case 4: // RGB + Alpha Channel
+                pixel_gray =
+                    gray_alpha(rgb2gray(pixel_offset[0], pixel_offset[1], pixel_offset[2]), pixel_offset[3], 255);
+                break;
+
+            default:
+
+                stbi_image_free(img_data);
+                destroy_grayscale_image(gscale_image);
+                errorf("stbi_image() failed.");
+                return NULL;
+            }
+
+            IMG_INDEX(gscale_image->pixels, width, i, j) = pixel_gray;
+        }
+    }
+
+    stbi_image_free(img_data);
+
+    return gscale_image;
+}
+
+size_t rgb2gray_luminosity(size_t r, size_t g, size_t b)
+{
+    return (size_t)round(0.299 * r + 0.587 * g + 0.114 * b);
+}
+
+size_t rgb2gray_average(size_t r, size_t g, size_t b)
+{
+    return (r + g + b) / 3;
+}
+
+size_t apply_gray_alpha(size_t g, size_t a, size_t max_pixel)
+{
+    return (g * a) / max_pixel;
 }

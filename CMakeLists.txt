@@ -28,3 +28,5 @@ set(SOURCES
 include_directories(include/)
 
 add_executable(ascart ${SOURCES})
+
+target_link_libraries(ascart PRIVATE m)
