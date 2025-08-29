@@ -43,7 +43,8 @@ void destroy_grayscale_image_8_bit(GrayScaleImage8bit *img)
     }
 }
 
-GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit *restrict src, const size_t target_width)
+GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit *restrict src,
+                                                       const size_t target_width)
 {
     // Upscaling is not accepted.
     if (target_width >= src->width)
@@ -57,6 +58,7 @@ GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit 
 
     GrayScaleImage8bit *scaled = create_grayscale_image_8bit(target_width, target_height, src->max_pixel_value);
 
+#pragma omp parallel for
     for (size_t i = 0; i < target_height; i++)
     {
         for (size_t j = 0; j < target_width; j++)
@@ -80,30 +82,23 @@ GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit 
     return scaled;
 }
 
-GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2GrayFunc rgb2gray, GrayAlphaFunc gray_alpha)
+GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2GrayFunc rgb2gray,
+                                                     GrayAlphaFunc gray_alpha)
 {
     int width, height, n_channels;
 
     unsigned char *img_data = stbi_load(filename, &width, &height, &n_channels, false);
-    if (img_data == NULL)
+    if (img_data == NULL || width <= 0 || height <= 0 || n_channels <= 0)
     {
         errorf("stbi_load() failed.");
-        return NULL;
-    }
-
-    if (width <= 0 || height <= 0 || n_channels <= 0)
-    {
-        stbi_image_free(img_data);
-        errorf("stbi_load() failed.");
-        return NULL;
+        goto failure_exit;
     }
 
     GrayScaleImage8bit *gscale_image = create_grayscale_image_8bit(width, height, 255);
     if (!gscale_image)
     {
-        stbi_image_free(img_data);
         errorf("create_grayscale_image() failed.");
-        return NULL;
+        goto failure_exit;
     }
 
     for (size_t i = 0; i < height; i++)
@@ -134,10 +129,8 @@ GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2G
 
             default:
 
-                stbi_image_free(img_data);
-                destroy_grayscale_image_8_bit(gscale_image);
                 errorf("stbi_image() failed.");
-                return NULL;
+                goto failure_exit;
             }
 
             IMG_INDEX(gscale_image->pixels, width, i, j) = pixel_gray;
@@ -145,8 +138,16 @@ GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2G
     }
 
     stbi_image_free(img_data);
-
     return gscale_image;
+
+failure_exit:
+    if (!img_data)
+        stbi_image_free(img_data);
+
+    if (!gscale_image)
+        destroy_grayscale_image_8_bit(gscale_image);
+
+    return NULL;
 }
 
 uint8_t rgb2gray_luminosity_8bit(uint8_t r, uint8_t g, uint8_t b)

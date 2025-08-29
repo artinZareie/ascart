@@ -46,6 +46,7 @@ CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage8bit *res
 {
     CharacterASCIIImage *ascart = create_character_ascii_image(src->width, src->height);
 
+#pragma omp parallel for
     for (int i = 0; i < src->height; i++)
     {
         for (int j = 0; j < src->width; j++)

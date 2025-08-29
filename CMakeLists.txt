@@ -4,6 +4,7 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(AGP_DEBUG "Enable debug logging" OFF)
+option(AGP_ERROR_FATAL "Enable debug logging" ON)
 set(AGP_ERROR_LEVEL 2 CACHE STRING "Error logging level (0-2)")
 
 if(AGP_DEBUG)
@@ -27,6 +28,9 @@ set(SOURCES
 
 include_directories(include/)
 
+find_package(OpenMP REQUIRED)
+
 add_executable(ascart ${SOURCES})
 
 target_link_libraries(ascart PRIVATE m)
+target_link_libraries(ascart PRIVATE OpenMP::OpenMP_C)

@@ -12,7 +12,9 @@ void errorf(const char *fmt, ...)
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
     va_end(args);
+#ifdef AGP_ERROR_FATAL
     exit(EXIT_FAILURE);
+#endif
 #endif
 }
 
