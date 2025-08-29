@@ -21,7 +21,7 @@ CharacterASCIIImage *create_character_ascii_image(size_t width, size_t height)
     img->height = height;
     img->pixels = (char *)malloc(width * height * sizeof(char));
 
-    if (img->pixels)
+    if (!img->pixels)
     {
         free(img);
         return 0;
@@ -36,7 +36,7 @@ void destroy_character_ascii_image(CharacterASCIIImage *image)
     {
         image->height = image->width = 0;
 
-        if (!image->pixels)
+        if (image->pixels)
             free(image->pixels);
         image->pixels = NULL;
     }
