@@ -4,4 +4,4 @@
 
 #define AGP_PGM_BUFF_SIZE 1024
 
-GrayScaleImage *read_pgm_p2(const char *filename);
+GrayScaleImage8bit *read_pgm_p2(const char *filename);

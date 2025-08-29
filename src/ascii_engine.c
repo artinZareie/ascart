@@ -42,7 +42,7 @@ void destroy_character_ascii_image(CharacterASCIIImage *image)
     }
 }
 
-CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage *restrict src)
+CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage8bit *restrict src)
 {
     CharacterASCIIImage *ascart = create_character_ascii_image(src->width, src->height);
 
@@ -52,7 +52,8 @@ CharacterASCIIImage *generate_brightness_ascii_art(const GrayScaleImage *restric
         {
             size_t pixel = IMG_INDEX(src->pixels, src->width, i, j);
             char ascii = brightness_ascii_characters[((int)pixel * ((int)brightness_ascii_characters_count - 1)) /
-                                                     (int)src->max_pixel_value];
+                                                     (int)src->max_pixel_value]; // NOTE: Conversion to int is crucial
+                                                                                 // due to overflow.
             IMG_INDEX(ascart->pixels, ascart->width, i, j) = ascii;
         }
     }

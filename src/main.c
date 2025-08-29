@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    GrayScaleImage *original_image = load_image_as_grayscale_stb(argv[1], rgb2gray_average, apply_gray_alpha);
+    GrayScaleImage8bit *original_image = load_image_as_grayscale_stb_8bit(argv[1], rgb2gray_average_8bit, apply_gray_alpha_8bit);
     if (!original_image)
     {
         errorf("Failed to read PGM file: %s", argv[1]);
@@ -28,15 +28,15 @@ int main(int argc, char *argv[])
     if (target_width >= original_image->width)
     {
         errorf("Target width (%zu) must be less than original width (%zu)", target_width, original_image->width);
-        destroy_grayscale_image(original_image);
+        destroy_grayscale_image_8_bit(original_image);
         return 1;
     }
 
-    GrayScaleImage *scaled_image = scale_grayscale_image_average(original_image, target_width);
+    GrayScaleImage8bit *scaled_image = scale_grayscale_image_average_8bit(original_image, target_width);
     if (!scaled_image)
     {
         errorf("Failed to scale image");
-        destroy_grayscale_image(original_image);
+        destroy_grayscale_image_8_bit(original_image);
         return 1;
     }
 
@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     if (!ascii_art)
     {
         errorf("Failed to generate ASCII art");
-        destroy_grayscale_image(original_image);
-        destroy_grayscale_image(scaled_image);
+        destroy_grayscale_image_8_bit(original_image);
+        destroy_grayscale_image_8_bit(scaled_image);
         return 1;
     }
 
@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
     if (save_status != SAVE_SUCCESS)
     {
         errorf("Failed to save ASCII art to: %s", argv[2]);
-        destroy_grayscale_image(original_image);
-        destroy_grayscale_image(scaled_image);
+        destroy_grayscale_image_8_bit(original_image);
+        destroy_grayscale_image_8_bit(scaled_image);
         destroy_character_ascii_image(ascii_art);
         return 1;
     }
@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
     elogf("Successfully converted %s to ASCII art in %s", argv[1], argv[2]);
     debugf("Output size: %zux%zu characters", ascii_art->width, ascii_art->height);
 
-    destroy_grayscale_image(original_image);
-    destroy_grayscale_image(scaled_image);
+    destroy_grayscale_image_8_bit(original_image);
+    destroy_grayscale_image_8_bit(scaled_image);
     destroy_character_ascii_image(ascii_art);
 
     return 0;

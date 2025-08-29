@@ -10,16 +10,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-GrayScaleImage *create_grayscale_image(size_t width, size_t height, size_t max_pixel_value)
+GrayScaleImage8bit *create_grayscale_image_8bit(size_t width, size_t height, uint8_t max_pixel_value)
 {
-    GrayScaleImage *img = (GrayScaleImage *)malloc(sizeof(GrayScaleImage));
+    GrayScaleImage8bit *img = (GrayScaleImage8bit *)malloc(sizeof(GrayScaleImage8bit));
     if (!img)
         return NULL;
 
     img->height = height;
     img->width = width;
     img->max_pixel_value = max_pixel_value;
-    img->pixels = (size_t *)malloc(width * height * sizeof(size_t));
+    img->pixels = (uint8_t *)malloc(width * height * sizeof(uint8_t));
     if (!img->pixels)
     {
         free(img);
@@ -29,7 +29,7 @@ GrayScaleImage *create_grayscale_image(size_t width, size_t height, size_t max_p
     return img;
 }
 
-void destroy_grayscale_image(GrayScaleImage *img)
+void destroy_grayscale_image_8_bit(GrayScaleImage8bit *img)
 {
     if (img)
     {
@@ -43,7 +43,7 @@ void destroy_grayscale_image(GrayScaleImage *img)
     }
 }
 
-GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src, const size_t target_width)
+GrayScaleImage8bit *scale_grayscale_image_average_8bit(const GrayScaleImage8bit *restrict src, const size_t target_width)
 {
     // Upscaling is not accepted.
     if (target_width >= src->width)
@@ -55,31 +55,32 @@ GrayScaleImage *scale_grayscale_image_average(const GrayScaleImage *restrict src
     const size_t patch_width = src->width / target_width;
     const size_t patch_height = src->height / target_height;
 
-    GrayScaleImage *scaled = create_grayscale_image(target_width, target_height, src->max_pixel_value);
+    GrayScaleImage8bit *scaled = create_grayscale_image_8bit(target_width, target_height, src->max_pixel_value);
 
     for (size_t i = 0; i < target_height; i++)
     {
         for (size_t j = 0; j < target_width; j++)
         {
-            IMG_INDEX(scaled->pixels, target_width, i, j) = 0;
+            // IMG_INDEX(scaled->pixels, target_width, i, j) = 0;
+            uint32_t sum = 0;
 
             for (size_t ii = 0; ii < patch_height; ii++)
             {
                 for (size_t jj = 0; jj < patch_width; jj++)
                 {
-                    IMG_INDEX(scaled->pixels, target_width, i, j) +=
-                        IMG_INDEX(src->pixels, src->width, i * patch_height + ii, j * patch_width + jj);
+                    sum += IMG_INDEX(src->pixels, src->width, i * patch_height + ii, j * patch_width + jj);
                 }
             }
 
-            IMG_INDEX(scaled->pixels, target_width, i, j) /= patch_width * patch_height;
+            IMG_INDEX(scaled->pixels, target_width, i, j) =
+                sum / (patch_width * patch_height); // NOTE: Conversion to int is crucial due to overflow.
         }
     }
 
     return scaled;
 }
 
-GrayScaleImage *load_image_as_grayscale_stb(const char *filename, RGB2GrayFunc rgb2gray, GrayAlphaFunc gray_alpha)
+GrayScaleImage8bit *load_image_as_grayscale_stb_8bit(const char *filename, RGB2GrayFunc rgb2gray, GrayAlphaFunc gray_alpha)
 {
     int width, height, n_channels;
 
@@ -97,7 +98,7 @@ GrayScaleImage *load_image_as_grayscale_stb(const char *filename, RGB2GrayFunc r
         return NULL;
     }
 
-    GrayScaleImage *gscale_image = create_grayscale_image(width, height, 255);
+    GrayScaleImage8bit *gscale_image = create_grayscale_image_8bit(width, height, 255);
     if (!gscale_image)
     {
         stbi_image_free(img_data);
@@ -134,7 +135,7 @@ GrayScaleImage *load_image_as_grayscale_stb(const char *filename, RGB2GrayFunc r
             default:
 
                 stbi_image_free(img_data);
-                destroy_grayscale_image(gscale_image);
+                destroy_grayscale_image_8_bit(gscale_image);
                 errorf("stbi_image() failed.");
                 return NULL;
             }
@@ -148,17 +149,17 @@ GrayScaleImage *load_image_as_grayscale_stb(const char *filename, RGB2GrayFunc r
     return gscale_image;
 }
 
-size_t rgb2gray_luminosity(size_t r, size_t g, size_t b)
+uint8_t rgb2gray_luminosity_8bit(uint8_t r, uint8_t g, uint8_t b)
 {
-    return (size_t)round(0.299 * r + 0.587 * g + 0.114 * b);
+    return (uint8_t)round(0.299 * r + 0.587 * g + 0.114 * b);
 }
 
-size_t rgb2gray_average(size_t r, size_t g, size_t b)
+uint8_t rgb2gray_average_8bit(uint8_t r, uint8_t g, uint8_t b)
 {
-    return (r + g + b) / 3;
+    return ((int)r + g + b) / 3; // NOTE: Conversion to int is crucial due to overflow.
 }
 
-size_t apply_gray_alpha(size_t g, size_t a, size_t max_pixel)
+uint8_t apply_gray_alpha_8bit(uint8_t g, uint8_t a, uint8_t max_pixel)
 {
-    return (g * a) / max_pixel;
+    return ((int)g * a) / max_pixel; // NOTE: Conversion to int is crucial due to overflow.
 }

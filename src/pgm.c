@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-GrayScaleImage *read_pgm_p2(const char *filename)
+GrayScaleImage8bit *read_pgm_p2(const char *filename)
 {
     FILE *file = fopen(filename, "r");
     if (!file)
@@ -40,8 +40,8 @@ GrayScaleImage *read_pgm_p2(const char *filename)
         return 0;
     }
 
-    GrayScaleImage *image = create_grayscale_image(width, height, max_pixel_value);
-	elogf("MAX: %zu", image->max_pixel_value);
+    GrayScaleImage8bit *image = create_grayscale_image_8bit(width, height, max_pixel_value);
+    elogf("MAX: %zu", image->max_pixel_value);
 
     for (int i = 0; i < height; i++)
     {
@@ -54,9 +54,17 @@ GrayScaleImage *read_pgm_p2(const char *filename)
                 errorf("Dimension Mismatch!");
             }
 
+            if (max_pixel_value > 255)
+            {
+                pixel_value = ((int)pixel_value * 255) / max_pixel_value;
+            }
+
             IMG_INDEX(image->pixels, width, i, j) = pixel_value;
         }
     }
+
+    if (max_pixel_value > 255)
+        max_pixel_value = 255;
 
     fclose(file);
 
