@@ -1,37 +1,45 @@
 #include <ascii_engine.h>
 #include <helpers.h>
 #include <image.h>
+#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char *argv[])
 {
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    curs_set(0);
+
     int return_code = 1;
     GrayScaleImage8bit *original_image = NULL;
     GrayScaleImage8bit *scaled_image = NULL;
     CharacterASCIIImage *ascii_art = NULL;
     GrayScaleImage8bit *image_to_process = NULL;
 
-    if (argc != 3 && argc != 4)
+    if (argc != 2)
     {
-        errorf("Usage: %s <input.pgm> <output.txt> [target_width]", argv[0]);
+        endwin();
+        errorf("Usage: %s <input_image>", argv[0]);
         return 1;
     }
+
+    int term_rows, term_cols;
+    getmaxyx(stdscr, term_rows, term_cols);
 
     original_image = load_image_as_grayscale_stb_8bit(argv[1], rgb2gray_average_8bit, apply_gray_alpha_8bit);
     if (!original_image)
     {
-        errorf("Failed to read image file: %s", argv[1]);
         goto cleanup;
     }
 
-    const size_t target_width = (argc == 4) ? (size_t)atoi(argv[3]) : original_image->width;
+    size_t target_w_from_cols = term_cols;
+    size_t target_w_from_rows = (term_rows * original_image->width * WIDTH_HEIGH_SCALE_FACTOR) / original_image->height;
 
-    if (target_width > original_image->width)
-    {
-        errorf("Target width (%zu) must be <= original width (%zu)", target_width, original_image->width);
-        goto cleanup;
-    }
+    size_t target_width = (target_w_from_cols < target_w_from_rows) ? target_w_from_cols : target_w_from_rows;
 
     if (target_width < original_image->width)
     {
@@ -55,19 +63,28 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    if (save_character_ascii_image_to_file(ascii_art, argv[2]) != SAVE_SUCCESS)
+    clear();
+    int start_y = (term_rows - ascii_art->height) / 2;
+    int start_x = (term_cols - ascii_art->width) / 2;
+
+    for (size_t i = 0; i < ascii_art->height; ++i)
     {
-        errorf("Failed to save ASCII art to: %s", argv[2]);
-        goto cleanup;
+        for (size_t j = 0; j < ascii_art->width; ++j)
+        {
+            mvaddch(start_y + i, start_x + j, IMG_INDEX(ascii_art->pixels, ascii_art->width, i, j));
+        }
     }
 
-    elogf("Successfully converted %s to ASCII art in %s", argv[1], argv[2]);
+    refresh();
+    getch();
+
     return_code = 0;
 
 cleanup:
     destroy_grayscale_image_8_bit(original_image);
     destroy_grayscale_image_8_bit(scaled_image);
     destroy_character_ascii_image(ascii_art);
+    endwin();
 
     return return_code;
 }

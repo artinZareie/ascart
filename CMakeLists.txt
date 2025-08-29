@@ -36,8 +36,10 @@ set(SOURCES
 include_directories(include/)
 
 find_package(OpenMP REQUIRED)
+find_package(Curses REQUIRED)
 
 add_executable(ascart ${SOURCES})
 
 target_link_libraries(ascart PRIVATE m)
 target_link_libraries(ascart PRIVATE OpenMP::OpenMP_C)
+target_link_libraries(ascart PRIVATE ${CURSES_LIBRARIES})
